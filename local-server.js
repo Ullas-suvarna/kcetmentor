@@ -57,9 +57,22 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`\n======================================================`);
-  console.log(`🚀 KCET Gen Z - Web Mentor Panel Local Server is running!`);
-  console.log(`📍 Local URL: http://localhost:${PORT}`);
-  console.log(`======================================================\n`);
-});
+function startServer(port) {
+  server.listen(port, () => {
+    console.log(`\n======================================================`);
+    console.log(`🚀 KCET Gen Z - Web Mentor Panel Local Server is running!`);
+    console.log(`📍 Local URL: http://localhost:${port}`);
+    console.log(`======================================================\n`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.warn(`Port ${port} is in use (e.g. Admin Panel), trying port ${port + 1}...`);
+      startServer(port + 1);
+    } else {
+      console.error('Server error:', err);
+    }
+  });
+}
+
+startServer(PORT);
