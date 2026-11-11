@@ -1,0 +1,175 @@
+/* KCET Gen Z Exact Design Tokens & Styles */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --kcet-blue: #2563EB;
+  --kcet-blue-dark: #1D4ED8;
+  --kcet-red: #E11D48;
+  --kcet-red-dark: #BE123C;
+  --kcet-peach: #FFF1F2;
+  --kcet-peach-border: #FFE4E6;
+  --kcet-navy: #0F172A;
+  --kcet-card-bg: #FFFFFF;
+  --kcet-input-bg: #F8FAFC;
+  --kcet-input-border: #E2E8F0;
+  --kcet-green: #16A34A;
+  --kcet-green-bg: #DCFCE7;
+  --kcet-blue-pill-bg: #EFF6FF;
+  --kcet-blue-pill-text: #2563EB;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #F8FAFC;
+  color: #0F172A;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Chat bubble styling */
+.chat-bubble-mentor {
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  color: #FFFFFF;
+  border-radius: 18px 18px 4px 18px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+.chat-bubble-student {
+  background: #FFFFFF;
+  color: #1E293B;
+  border-radius: 18px 18px 18px 4px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Pulse badge for live updates */
+.live-dot {
+  position: relative;
+}
+
+.live-dot::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: inherit;
+  animation: pulse-ring 1.8s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Loading spinner */
+.kcet-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  gap: 0.75rem;
+}
+
+.kcet-loader .spinner {
+  width: 36px;
+  height: 36px;
+  border: 3.5px solid #E2E8F0;
+  border-top-color: #2563EB;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.kcet-loader .spinner-sm {
+  width: 24px;
+  height: 24px;
+  border-width: 2.5px;
+}
+
+.kcet-loader p {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748B;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Full-page boot loader */
+.boot-loader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #F8FAFC;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  transition: opacity 0.3s ease;
+}
+
+.boot-loader-overlay .spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid #E2E8F0;
+  border-top-color: #2563EB;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.boot-loader-overlay h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0F172A;
+}
+
+.boot-loader-overlay p {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #94A3B8;
+}
+
+/* PC card shadows */
+.kcet-mentor-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kcet-mentor-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+}

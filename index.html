@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KCET Gen Z - Senior Mentor Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            kcet: { blue: '#2563EB', red: '#E11D48', navy: '#0F172A' }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 min-h-screen flex flex-col font-sans antialiased">
+
+  <!-- Boot Loader (shown while Firebase Auth initializes) -->
+  <div id="boot-loader" class="boot-loader-overlay">
+    <div class="w-16 h-16 rounded-3xl bg-slate-950 flex items-center justify-center shadow-xl shadow-blue-500/20 border border-blue-400/30">
+      <span class="text-xl font-black bg-gradient-to-r from-blue-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">KG</span>
+    </div>
+    <div class="spinner"></div>
+    <h3>KCET Gen Z</h3>
+    <p>Loading Mentor Portal...</p>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col space-y-3 pointer-events-none"></div>
+
+  <!-- Sign Out Confirmation Modal -->
+  <div id="signout-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 animate-fade-in border border-slate-100">
+      <div class="text-center">
+        <div class="w-14 h-14 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-100">
+          <i data-lucide="alert-triangle" class="w-7 h-7"></i>
+        </div>
+        <h3 class="font-bold text-lg text-slate-900">Sign Out?</h3>
+        <p class="text-sm text-slate-500 mt-2">Are you sure you want to sign out? You will need to log in again to access the mentor portal.</p>
+      </div>
+      <div class="mt-6 flex space-x-3">
+        <button id="cancel-signout-btn" class="flex-1 py-3 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition">Cancel</button>
+        <button id="confirm-signout-btn" class="flex-1 py-3 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md transition flex items-center justify-center space-x-2">
+          <i data-lucide="log-out" class="w-4 h-4"></i><span>Sign Out</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject Modal -->
+  <div id="reject-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 animate-fade-in border border-slate-100">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center space-x-2 text-rose-600 font-bold text-lg">
+          <i data-lucide="alert-circle" class="w-6 h-6"></i>
+          <span>Decline Student Booking</span>
+        </div>
+        <button id="close-reject-modal" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="mt-4 space-y-3">
+        <p class="text-sm text-slate-600">Please provide a reason for declining this mentoring slot.</p>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Reason for Rejection</label>
+          <textarea id="rejection-reason-input" rows="3" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-2xl focus:ring-2 focus:ring-rose-500 focus:outline-none" placeholder="e.g. Schedule conflict, please choose another slot..."></textarea>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end space-x-3">
+        <button id="cancel-reject-btn" class="px-5 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">Cancel</button>
+        <button id="confirm-reject-btn" class="px-5 py-2.5 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md transition flex items-center space-x-2">
+          <i data-lucide="x-circle" class="w-4 h-4"></i><span>Confirm Decline</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIN Unlock Modal -->
+  <div id="pin-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 animate-fade-in border border-slate-100">
+      <div class="text-center">
+        <div class="w-12 h-12 bg-rose-50 text-[#E11D48] rounded-full flex items-center justify-center mx-auto mb-3 border border-rose-100">
+          <i data-lucide="lock" class="w-6 h-6"></i>
+        </div>
+        <h3 class="font-bold text-lg text-slate-900">🔒 Mentor Profile Login</h3>
+        <p id="pin-modal-subtitle" class="text-xs text-slate-500 mt-1">Enter your password / PIN to open dashboard</p>
+      </div>
+      <div class="mt-4">
+        <input type="password" id="pin-input" class="w-full px-4 py-3 text-center text-lg tracking-widest border border-slate-300 rounded-2xl focus:ring-2 focus:ring-[#E11D48] focus:outline-none" placeholder="••••••••" />
+      </div>
+      <div class="mt-5 flex space-x-2">
+        <button id="cancel-pin-btn" class="flex-1 py-3 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">Cancel</button>
+        <button id="submit-pin-btn" class="flex-1 py-3 text-sm font-semibold text-white bg-slate-900 hover:bg-black rounded-xl shadow-md transition">Unlock</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===================================================== -->
+  <!-- VIEW 1: LOGIN PAGE                                     -->
+  <!-- ===================================================== -->
+  <div id="login-view" class="min-h-screen flex items-center justify-center p-6 bg-gradient-to-b from-blue-50/60 via-slate-50 to-blue-50/40">
+    <div class="max-w-md w-full animate-fade-in">
+
+      <!-- KCET Gen Z Branding -->
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-slate-950 shadow-xl shadow-blue-500/20 mb-3 border border-blue-400/30 p-2">
+          <span class="text-2xl font-black bg-gradient-to-r from-blue-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">KG</span>
+        </div>
+        <h1 class="text-2xl font-black text-slate-900 tracking-tight flex items-center justify-center gap-1.5">
+          KCET Gen Z <span class="text-blue-600">★</span>
+        </h1>
+        <p class="text-xs font-semibold text-blue-600 tracking-wide mt-1 uppercase">
+          Karnataka's #1 KCET Entrance Prep Hub
+        </p>
+      </div>
+
+      <!-- Login Card -->
+      <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/70 p-8 border border-slate-100">
+        <div class="text-center mb-6">
+          <h2 class="text-2xl font-bold text-slate-900">Welcome Back!</h2>
+          <p class="text-xs text-slate-500 mt-1">Sign in to continue your learning journey.</p>
+          <div class="flex items-center my-4">
+            <div class="flex-1 border-t border-slate-200"></div>
+            <span class="px-3 text-xs text-slate-400 font-medium">or</span>
+            <div class="flex-1 border-t border-slate-200"></div>
+          </div>
+        </div>
+
+        <form id="login-form" class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1.5">Email or Mobile Number</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-blue-600">
+                <i data-lucide="mail" class="w-5 h-5"></i>
+              </div>
+              <input type="text" id="login-email" required placeholder="ullassuvarna85@gmail.com"
+                class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1.5">Password</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-blue-600">
+                <i data-lucide="lock" class="w-5 h-5"></i>
+              </div>
+              <input type="password" id="login-password" required placeholder="••••••••"
+                class="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition" />
+              <button type="button" id="toggle-password"
+                class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600">
+                <i data-lucide="eye" id="eye-icon" class="w-5 h-5"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-1">
+            <button type="button" id="forgot-password-btn" class="text-xs font-semibold text-blue-600 hover:text-blue-700">
+              Forgot Password?
+            </button>
+          </div>
+
+          <button type="submit" id="login-submit-btn"
+            class="w-full mt-2 py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/25 transition flex items-center justify-center space-x-2 group">
+            <span>Sign In</span>
+            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+          </button>
+        </form>
+
+        <div class="mt-6 pt-5 border-t border-slate-100 text-center">
+          <span class="text-xs text-slate-400">Senior Mentor Portal Access</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===================================================== -->
+  <!-- VIEW 2: SENIOR MENTOR PORTAL (after main login)        -->
+  <!-- ===================================================== -->
+  <div id="portal-view" class="hidden min-h-screen bg-[#F8FAFC] flex flex-col">
+
+    <!-- Portal Header -->
+    <header class="bg-white border-b border-slate-200 px-6 lg:px-12 py-4 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+      <div class="flex items-center space-x-4">
+        <div class="w-10 h-10 rounded-2xl bg-slate-900 text-white font-black flex items-center justify-center text-sm shadow-md">KG</div>
+        <div>
+          <span class="text-xs font-bold uppercase tracking-wider text-[#E11D48] block">SENIOR MENTOR PORTAL</span>
+          <h2 class="text-xl lg:text-2xl font-bold text-slate-900 tracking-tight">Mentor Profile Access & Registration</h2>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3">
+        <span class="bg-[#FFF1F2] border border-[#FFE4E6] text-[#E11D48] text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">OFFER ₹50</span>
+        <button id="portal-signout-btn" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold rounded-xl text-xs transition flex items-center space-x-1">
+          <i data-lucide="log-out" class="w-4 h-4"></i><span>Sign Out</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Portal Body -->
+    <div class="flex-1 max-w-7xl w-full mx-auto p-6 lg:p-10 space-y-6">
+
+      <!-- Tabs: Senior Mentors / Register as Mentor -->
+      <div class="flex items-center space-x-3 max-w-md mx-auto justify-center bg-slate-100 p-1.5 rounded-2xl">
+        <button id="tab-senior-mentors-btn" class="flex-1 py-2.5 px-6 rounded-xl font-bold text-sm bg-[#E11D48] text-white shadow-sm transition">
+          Senior Mentors
+        </button>
+        <button id="tab-register-mentor-btn" class="flex-1 py-2.5 px-6 rounded-xl font-bold text-sm text-slate-600 hover:text-slate-900 transition">
+          Register as Mentor
+        </button>
+      </div>
+
+      <!-- TAB A: Senior Mentors Directory -->
+      <div id="subtab-senior-mentors" class="space-y-4">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+            <span>🎓</span><span>Registered Senior Mentors</span>
+          </h3>
+          <p class="text-xs text-slate-500 mt-1">
+            Tap on your profile and write your password to open your mentor dashboard, or browse available mentors.
+          </p>
+        </div>
+        <div id="portal-mentors-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- TAB B: Register as Mentor -->
+      <div id="subtab-register-mentor" class="hidden max-w-3xl mx-auto">
+        <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+          <div class="mb-6">
+            <h3 class="text-xl font-bold text-slate-900 flex items-center space-x-2">
+              <span>✍️</span><span>Senior Mentor Registration</span>
+            </h3>
+            <p class="text-xs text-slate-500 mt-1">Register yourself as a senior mentor. Fill details and set a secure password.</p>
+          </div>
+
+          <form id="portal-reg-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Your Full Name</label>
+                <input type="text" id="reg-name" required placeholder="Your Full Name" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#E11D48]" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Email Address</label>
+                <input type="email" id="reg-email" required placeholder="Email Address" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#E11D48]" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Phone Number</label>
+                <input type="tel" id="reg-phone" placeholder="Phone Number" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#E11D48]" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Qualification / Expertise</label>
+                <input type="text" id="reg-qualification" placeholder="Qualification / Expertise" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#E11D48]" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Experience</label>
+                <input type="text" id="reg-experience" placeholder="Experience" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#E11D48]" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Specialty Subjects</label>
+                <input type="text" id="reg-specialty" placeholder="Specialty Subjects" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#E11D48]" />
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Profile / Bio</label>
+                <textarea id="reg-bio" rows="2" placeholder="Profile / Bio" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#E11D48]"></textarea>
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Instagram / Telegram Handle</label>
+                <input type="text" id="reg-handle" placeholder="Instagram / Telegram Handle" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#E11D48]" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Choose Secure Password</label>
+                <input type="password" id="reg-password" required placeholder="Choose Secure Password" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#E11D48]" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Confirm Password</label>
+                <input type="password" id="reg-confirm-password" required placeholder="Confirm Password" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#E11D48]" />
+              </div>
+            </div>
+            <div class="pt-4">
+              <button type="submit" id="reg-submit-btn" class="w-full py-4 bg-[#E11D48] hover:bg-[#BE123C] text-white font-bold rounded-2xl shadow-lg shadow-rose-500/20 transition flex items-center justify-center space-x-2">
+                <span>✨ Register as Senior Mentor</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ===================================================== -->
+  <!-- VIEW 3: MENTOR DASHBOARD (after PIN unlock)            -->
+  <!-- ===================================================== -->
+  <div id="dashboard-view" class="hidden min-h-screen h-screen flex flex-col bg-[#F8FAFC] overflow-hidden">
+
+    <!-- Dashboard Header -->
+    <header class="bg-white border-b border-slate-200 px-6 lg:px-10 py-3.5 flex items-center justify-between flex-shrink-0 z-20 shadow-sm">
+      <div class="flex items-center space-x-4">
+        <div class="w-10 h-10 rounded-2xl bg-slate-900 text-white font-black flex items-center justify-center text-sm shadow-md">KG</div>
+        <div>
+          <h2 class="text-lg lg:text-xl font-black text-slate-900">
+            MENTOR PANEL: <span id="dash-mentor-name" class="text-blue-600">Senior Mentor</span>
+          </h2>
+          <p class="text-xs text-slate-500 font-semibold">Dashboard & Student Chats</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3">
+        <div class="hidden md:flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-full text-xs font-semibold text-slate-700">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span>
+          <span id="sync-status">Live Synced with App</span>
+        </div>
+        <button id="dash-switch-portal-btn" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition flex items-center space-x-1">
+          <i data-lucide="users" class="w-4 h-4"></i><span>All Mentors</span>
+        </button>
+        <button id="dash-signout-btn" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold rounded-xl text-xs transition flex items-center space-x-1">
+          <i data-lucide="log-out" class="w-4 h-4"></i><span>Sign Out</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Dashboard Sub-Nav -->
+    <div class="bg-white border-b border-slate-200 px-6 lg:px-10 py-2 flex items-center space-x-2 flex-shrink-0 overflow-x-auto">
+      <button data-nav="overview" class="dash-nav-btn px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white transition flex items-center space-x-2">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Dashboard Overview</span>
+      </button>
+      <button data-nav="live-chat" class="dash-nav-btn px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition flex items-center space-x-2">
+        <i data-lucide="message-square" class="w-4 h-4"></i><span>1-to-1 Live Chat</span>
+        <span id="nav-chat-count" class="bg-blue-600 text-white text-[10px] px-1.5 rounded-full">0</span>
+      </button>
+      <button data-nav="requests" class="dash-nav-btn px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition flex items-center space-x-2">
+        <i data-lucide="clock" class="w-4 h-4"></i><span>Pending Requests</span>
+        <span id="nav-requests-count" class="bg-amber-500 text-white text-[10px] px-1.5 rounded-full">0</span>
+      </button>
+      <button data-nav="assigned" class="dash-nav-btn px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition flex items-center space-x-2">
+        <i data-lucide="user-check" class="w-4 h-4"></i><span>Assigned Students</span>
+      </button>
+      <button data-nav="global-chat" class="dash-nav-btn px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition flex items-center space-x-2">
+        <i data-lucide="globe" class="w-4 h-4"></i><span>Senior Global Chat</span>
+      </button>
+      <button data-nav="profile" class="dash-nav-btn px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition flex items-center space-x-2">
+        <i data-lucide="user-cog" class="w-4 h-4"></i><span>My Profile Details</span>
+      </button>
+    </div>
+
+    <!-- Dashboard Content (scrollable) -->
+    <div class="flex-1 overflow-y-auto p-6 lg:p-8">
+
+      <!-- TAB: DASHBOARD OVERVIEW -->
+      <section id="panel-tab-overview" class="panel-tab-content space-y-6 max-w-7xl mx-auto">
+        <!-- Stats Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="user-check" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Assigned Students</p>
+              <h4 id="stat-assigned" class="text-3xl font-black text-slate-900 mt-0.5">0</h4>
+              <p class="text-[11px] text-emerald-600 font-bold mt-0.5">status == "Confirmed"</p>
+            </div>
+          </div>
+          <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="clock" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Requests</p>
+              <h4 id="stat-requests" class="text-3xl font-black text-slate-900 mt-0.5">0</h4>
+              <p class="text-[11px] text-amber-600 font-bold mt-0.5">Waiting Confirmation</p>
+            </div>
+          </div>
+          <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="messages-square" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Live Chat Rooms</p>
+              <h4 id="stat-chats" class="text-3xl font-black text-slate-900 mt-0.5">0</h4>
+              <p class="text-[11px] text-blue-600 font-bold mt-0.5">RTDB Realtime</p>
+            </div>
+          </div>
+          <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-2xl bg-rose-50 text-[#E11D48] flex items-center justify-center flex-shrink-0">
+              <i data-lucide="indian-rupee" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Honorarium Value</p>
+              <h4 id="stat-revenue" class="text-3xl font-black text-slate-900 mt-0.5">₹0</h4>
+              <p class="text-[11px] text-[#E11D48] font-bold mt-0.5">₹50 / session</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Action Lists -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-2">
+          <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <h3 class="font-bold text-slate-900 text-base">Pending Student Requests</h3>
+              </div>
+              <button onclick="window.switchDashNav('requests')" class="text-xs font-bold text-blue-600 hover:underline">View All →</button>
+            </div>
+            <div id="overview-pending-list" class="space-y-3"></div>
+          </div>
+          <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <h3 class="font-bold text-slate-900 text-base">Assigned Students (Confirmed)</h3>
+              </div>
+              <button onclick="window.switchDashNav('assigned')" class="text-xs font-bold text-blue-600 hover:underline">View All →</button>
+            </div>
+            <div id="overview-assigned-list" class="space-y-3"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: 1-TO-1 LIVE CHAT -->
+      <section id="panel-tab-live-chat" class="panel-tab-content hidden h-full max-w-7xl mx-auto">
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm flex h-[calc(100vh-160px)] overflow-hidden">
+          <!-- Left: Students List -->
+          <div class="w-80 lg:w-96 border-r border-slate-200 flex flex-col h-full bg-slate-50/50 flex-shrink-0">
+            <div class="p-4 border-b border-slate-200 bg-white">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold text-slate-900 text-base">Student Chats</h3>
+                <span id="chat-count-badge" class="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">0</span>
+              </div>
+              <div class="relative">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                <input type="text" id="search-chat-input" placeholder="Search student..."
+                  class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-100 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-600" />
+              </div>
+            </div>
+            <div id="chat-students-list" class="flex-1 overflow-y-auto divide-y divide-slate-100 p-2 space-y-1"></div>
+          </div>
+          <!-- Right: Chat Area -->
+          <div class="flex-1 flex flex-col h-full bg-slate-100/40">
+            <div id="no-chat-chosen" class="flex-1 flex flex-col items-center justify-center p-8 text-center">
+              <div class="w-16 h-16 rounded-3xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4">
+                <i data-lucide="message-square" class="w-8 h-8"></i>
+              </div>
+              <h3 class="text-lg font-bold text-slate-800">Select a Confirmed Student to Start Chat</h3>
+              <p class="text-xs text-slate-500 max-w-sm mt-1">Choose a student from the list to open the Realtime Database chat.</p>
+            </div>
+            <div id="active-chat-box" class="hidden flex-1 flex flex-col h-full overflow-hidden">
+              <div class="bg-white px-6 py-3.5 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
+                <div class="flex items-center space-x-3">
+                  <div id="chat-header-avatar" class="w-10 h-10 rounded-full bg-rose-50 text-rose-600 font-bold flex items-center justify-center text-sm border border-rose-100">ST</div>
+                  <div>
+                    <div class="flex items-center space-x-2">
+                      <h4 id="chat-header-name" class="font-bold text-slate-900 text-sm">Student Name</h4>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Confirmed</span>
+                    </div>
+                    <div class="flex items-center space-x-2 text-xs text-slate-500 mt-0.5">
+                      <span id="chat-header-email">student@email.com</span>
+                      <span>•</span>
+                      <span id="chat-header-slot" class="font-medium text-blue-600">Slot: N/A</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs text-slate-400">Booking ID:</span>
+                  <span id="chat-header-booking-id" class="font-mono text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-1 rounded-md">BK_0000</span>
+                </div>
+              </div>
+              <div id="chat-messages-feed" class="flex-1 overflow-y-auto p-6 space-y-4"></div>
+              <div class="px-6 py-2 bg-slate-50 border-t border-slate-200 flex items-center space-x-2 overflow-x-auto flex-shrink-0">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex-shrink-0">Quick Tips:</span>
+                <button class="canned-tip-btn text-xs bg-white hover:bg-blue-50 hover:text-blue-600 text-slate-600 border border-slate-200 px-3 py-1 rounded-lg flex-shrink-0 transition">👋 Welcome! How can I help you today?</button>
+                <button class="canned-tip-btn text-xs bg-white hover:bg-blue-50 hover:text-blue-600 text-slate-600 border border-slate-200 px-3 py-1 rounded-lg flex-shrink-0 transition">🎯 Let's review your KCET target rank & plan</button>
+                <button class="canned-tip-btn text-xs bg-white hover:bg-blue-50 hover:text-blue-600 text-slate-600 border border-slate-200 px-3 py-1 rounded-lg flex-shrink-0 transition">📝 Share your doubts or questions here</button>
+              </div>
+              <div class="p-4 bg-white border-t border-slate-200 flex-shrink-0">
+                <form id="chat-send-form" class="flex items-center space-x-3">
+                  <input type="text" id="chat-message-input" autocomplete="off" placeholder="Type your mentor guidance message... (Press Enter to send)"
+                    class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-600 transition" />
+                  <button type="submit" class="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-md transition flex items-center space-x-2">
+                    <span>Send</span><i data-lucide="send" class="w-4 h-4"></i>
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: PENDING REQUESTS -->
+      <section id="panel-tab-requests" class="panel-tab-content hidden space-y-6 max-w-7xl mx-auto">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="text-xl font-bold text-slate-900">Pending Student Booking Requests</h3>
+            <p class="text-xs text-slate-500">Confirm or decline student mentoring sessions.</p>
+          </div>
+          <div class="flex items-center space-x-2 bg-white p-1 rounded-xl border border-slate-200 text-xs font-semibold">
+            <button class="req-filter-btn px-3 py-1.5 rounded-lg bg-blue-600 text-white" data-filter="all">All</button>
+            <button class="req-filter-btn px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100" data-filter="Waiting for Senior Confirmation">Waiting Confirmation</button>
+            <button class="req-filter-btn px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100" data-filter="Under Verification">Under Verification</button>
+          </div>
+        </div>
+        <div id="pending-requests-feed" class="space-y-4"></div>
+      </section>
+
+      <!-- TAB: ASSIGNED STUDENTS -->
+      <section id="panel-tab-assigned" class="panel-tab-content hidden space-y-6 max-w-7xl mx-auto">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-xl font-bold text-slate-900">Assigned Confirmed Students</h3>
+            <p class="text-xs text-slate-500">Your confirmed mentoring sessions. Click Connect & Chat to open chat.</p>
+          </div>
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+            <input type="text" id="search-assigned-input" placeholder="Search students..."
+              class="pl-9 pr-4 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:ring-1 focus:ring-blue-600 focus:outline-none" />
+          </div>
+        </div>
+        <div id="assigned-students-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+      </section>
+
+      <!-- TAB: SENIOR GLOBAL CHAT -->
+      <section id="panel-tab-global-chat" class="panel-tab-content hidden h-full max-w-5xl mx-auto">
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col h-[calc(100vh-160px)] overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-bold">
+                <i data-lucide="globe" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-slate-900 text-base">Senior Mentors Community Chat</h3>
+                <p class="text-xs text-slate-500">Real-time open chat for all verified senior mentors (RTDB)</p>
+              </div>
+            </div>
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-100 text-purple-700">senior_chat_global</span>
+          </div>
+          <div id="global-messages-feed" class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/40"></div>
+          <div class="p-4 bg-white border-t border-slate-200">
+            <form id="global-chat-form" class="flex items-center space-x-3">
+              <input type="text" id="global-chat-input" placeholder="Post a note to fellow senior mentors..."
+                class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-purple-600 transition" />
+              <button type="submit" class="px-5 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-2xl shadow-md transition flex items-center space-x-2">
+                <span>Post</span><i data-lucide="send" class="w-4 h-4"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: MY PROFILE DETAILS -->
+      <section id="panel-tab-profile" class="panel-tab-content hidden space-y-6 max-w-4xl mx-auto">
+        <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+          <div class="flex items-center justify-between pb-6 border-b border-slate-100 mb-6">
+            <div>
+              <h3 class="text-xl font-bold text-slate-900">My Profile Details (Senior Mentor)</h3>
+              <p class="text-xs text-slate-500">Edit and save your profile to Firestore registered_mentors.</p>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">Active Status</span>
+          </div>
+          <form id="profile-editor-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Display Name</label>
+                <input type="text" id="prof-name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Email (Login ID)</label>
+                <input type="email" id="prof-email" readonly class="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-sm text-slate-500 cursor-not-allowed" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Phone Number</label>
+                <input type="tel" id="prof-phone" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Qualification / Expertise</label>
+                <input type="text" id="prof-qualification" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Experience</label>
+                <input type="text" id="prof-experience" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Specialty Subjects</label>
+                <input type="text" id="prof-specialty" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Instagram / Telegram Handle</label>
+                <input type="text" id="prof-handle" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Password / Profile Unlock PIN</label>
+                <input type="text" id="prof-password" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none" />
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Profile / Bio</label>
+                <textarea id="prof-bio" rows="3" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"></textarea>
+              </div>
+            </div>
+            <div class="flex justify-end pt-4">
+              <button type="submit" id="save-profile-btn" class="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-md transition flex items-center space-x-2">
+                <i data-lucide="save" class="w-4 h-4"></i><span>Save Profile to Firestore</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
