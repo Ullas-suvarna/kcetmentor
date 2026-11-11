@@ -1,4 +1,4 @@
-// Native zero-dependency Node.js HTTP static server
+// Native zero-dependency Node.js HTTP static server for local development
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -59,7 +59,7 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`\n======================================================`);
-  console.log(`🚀 KCET Gen Z - Web Mentor Panel Server is running!`);
+  console.log(`🚀 KCET Gen Z - Web Mentor Panel Local Server is running!`);
   console.log(`📍 Local URL: http://localhost:${PORT}`);
   console.log(`======================================================\n`);
 });

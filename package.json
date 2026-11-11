@@ -2,10 +2,9 @@
   "name": "kcet-genz-mentor-panel",
   "version": "1.0.0",
   "description": "KCET Gen Z Web Mentor Panel - Compatible with KCET Gen Z Android App & Firebase Backend",
-  "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node local-server.js",
+    "dev": "node local-server.js"
   },
   "keywords": [
     "kcet",
